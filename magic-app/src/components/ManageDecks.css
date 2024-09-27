@@ -1,0 +1,87 @@
+/* src/components/ManageDecks.css */
+.manage-decks-container {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+  }
+  
+  .card-preview {
+    width: 20%;
+    text-align: center;
+  }
+  
+  .card-preview img {
+  width: 100%;
+  height: auto;
+  max-width: 300px;
+  margin-bottom: 20px;
+}
+
+.preview-image {
+  border: 1px solid #ddd;
+  padding: 5px;
+  background-color: #fff;
+}
+  
+  .preview-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .deck-controls {
+    width: 75%;
+  }
+  
+  .deck-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .deck-header input,
+  .deck-header select,
+  .deck-header button {
+    padding: 10px;
+    font-size: 1rem;
+  }
+  
+  .search-bar {
+    margin-bottom: 20px;
+  }
+  
+  .search-bar input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+  }
+  
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+  }
+  
+  .card-item img {
+    width: 100%;
+    height: auto;
+    cursor: pointer;
+  }
+  
+  .search-results {
+    margin-top: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+  }
+  
+  .search-result-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .search-result-item:hover {
+    background-color: #eee;
+  }

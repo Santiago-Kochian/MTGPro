@@ -1,0 +1,584 @@
+/* Full playmat container */
+.playmat {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    height: 100vh; /* Full height of the viewport */
+    background-color: #1b1b1b; /* Dark background */
+}
+
+.top-left-block {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 270px;
+    height: 380px;
+    background-color: #444;
+    color: white;
+    border: 2px solid #555;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-radius: 8px; /* Optional rounded corners */
+}
+
+/* Card preview image in the top-left block */
+.fixed-card-preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Bottom container holding the 3 sections */
+.bottom-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end; /* Align items at the bottom */
+    width: 90%;
+    padding: 20px;
+    margin-bottom: 20px; /* Add some space from the bottom */
+}
+
+/* Deck block (left side) */
+.deck-block {
+    width: 190px; /* Card width */
+    height: 267px; /* Card height */
+    background-color: #444;
+    border: 2px solid #666;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    border-radius: 8px; /* Optional rounded corners */
+    cursor: pointer; /* Change cursor to pointer on hover */
+}
+
+/* Image for the Magic card back (occupies the full deck block) */
+.deck-image {
+    width: 100%;
+    height: 100%; /* Take the full height of the block */
+    object-fit: cover; /* Ensures the image covers the whole block */
+    border-radius: 8px; /* Optional rounded corners */
+}
+
+/* Card count above the deck block */
+.card-count {
+    margin-bottom: 10px;
+    font-size: 16px;
+    color: white;
+}
+
+/* Center block container for Hand and Large block */
+.center-block-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 2; /* Make it take up most of the center space */
+    height: 100%; /* Full height */
+}
+
+/* Large block (top of center container) */
+.large-block {
+    width: 100%; /* Same width as the hand block */
+    height: calc(100% - 267px); /* Height to reach the top of the exiled block */
+    background-color: #555;
+    border: 2px solid #777;
+    position: relative; /* To allow absolute positioning of cards */
+    overflow: hidden; /* Prevent cards from going out of the block */
+}
+
+/* Hand block (center) */
+.hand-block {
+    width: 1330px; /* Fixed width for the hand block */
+    background-color: #333;
+    border: 2px solid #555;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 267px; /* Match the height of the cards */
+    color: white;
+    overflow: hidden; /* Prevent cards from extending beyond the block */
+}
+
+/* Hand container for displaying drawn cards */
+.hand-cards {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    position: relative;
+    overflow: hidden; /* Prevent hand block from expanding */
+}
+
+/* Image of cards in hand */
+.hand-card-image {
+    width: 190px;
+    height: 267px;
+    object-fit: cover;
+    position: relative;
+    margin-left: 10px; /* Default margin */
+}
+
+/* Apply overlap to all cards if hand has more than 6 */
+.hand-block.overlap .hand-card-image {
+    margin-right: -50px; /* Negative margin to create overlap */
+}
+
+/* Right container for stacking Exiled, Graveyard, and Commander blocks */
+.right-block-container {
+    display: flex;
+    flex-direction: column; /* Stack exiled, graveyard, and commander */
+    justify-content: flex-end; /* Align commander at the bottom */
+    align-items: center;
+    height: 100%; /* Take full height of the container */
+}
+
+/* Exiled block (top of right block) */
+.exiled-block {
+    width: 190px;
+    height: 267px;
+    background-color: #444;
+    border: 2px solid #666;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    border-radius: 8px; /* Optional rounded corners */
+    margin-bottom: 10px; /* Space between exiled and graveyard */
+}
+
+/* Graveyard block (middle of right block) */
+.graveyard-block {
+    width: 190px;
+    height: 267px;
+    background-color: #444;
+    border: 2px solid #666;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    border-radius: 8px; /* Optional rounded corners */
+    margin-bottom: 10px; /* Space between graveyard and commander */
+    position: relative; /* Ensure image is positioned relative to the block */
+  }
+
+.graveyard-placeholder img {
+    width: 100%; /* Make the image take the full width of the block */
+    height: 100%; /* Make the image take the full height of the block */
+    object-fit: cover; /* Ensure the image covers the block without stretching */
+    position: absolute; /* Position the image absolutely within the graveyard block */
+    top: 0;
+    left: 0;
+    border-radius: 8px; /* Optional rounded corners */
+  }
+
+.graveyard-placeholder,
+.exiled-placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  height: 100%;
+}
+
+/* Commander block (bottom of right block) */
+.commander-block {
+    position: relative;
+    width: 190px;
+    height: 267px;
+    background-color: #333;
+    border: 2px solid #555;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+  
+  .commander-block img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+  
+  .commander-placeholder {
+    color: #fff;
+    font-size: 14px;
+    text-align: center;
+    padding: 10px;
+  }
+  
+  .commander-block-empty {
+    width: 190px;
+    height: 267px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #444;
+    color: #888;
+    border: 2px dashed #666;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .commander-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .commander-modal {
+    background-color: #222;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 400px;
+    text-align: center;
+  }
+  
+  .commander-modal-image {
+    width: 100%;
+    max-width: 300px;
+    margin: 10px auto;
+  }
+
+/* Deck selection screen */
+.deck-selection {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Full height for centered content */
+    background-color: #222; /* Darker background */
+    color: white;
+}
+
+.deck-selection h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+/* Dropdown styling */
+.deck-dropdown {
+    padding: 10px;
+    font-size: 16px;
+    background-color: #444;
+    border: 2px solid #666;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.3s ease;
+}
+
+.deck-dropdown:hover, .deck-dropdown:focus {
+    background-color: #555; /* Hover effect */
+}
+
+.deck-dropdown option {
+    background-color: #444;
+    color: white;
+    padding: 10px;
+}
+
+.playable-card {
+    width: 190px;
+    height: 267px;
+    object-fit: cover;
+    position: absolute; /* Absolute positioning to place anywhere in the block */
+}
+
+/* Ensure that the large block, graveyard, exiled, and commander blocks can receive dropped cards */
+.large-block, .graveyard-block, .exiled-block, .commander-block {
+    border: 2px solid #666; /* Highlight these zones */
+    min-height: 200px; /* Ensure there's space for dropped cards */
+    background-color: #333; /* Optional background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap; /* Allow multiple cards in the zone */
+}
+
+/* Graveyard modal overlay */
+.graveyard-viewer-overlay,
+.exiled-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+  
+  /* Graveyard viewer container */
+  .graveyard-viewer,
+  .exiled-viewer {
+    background-color: #222;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    height: 80%;
+    overflow: auto;
+}
+  
+  /* Graveyard cards container */
+  .graveyard-cards,
+  .exiled-cards {
+    display: flex;
+    gap: 10px; /* Add spacing between the cards */
+    justify-content: center;
+    flex-wrap: wrap;
+}
+  
+  /* Individual graveyard card */
+  .graveyard-card,
+  .exiled-card {
+    width: 190px;
+    height: 267px;
+    object-fit: cover;
+    margin: 10px;
+}
+  
+  /* Graveyard card number */
+  .graveyard-number,
+  .exiled-number {
+    color: white;
+    text-align: center;
+    margin-bottom: 5px;
+  }
+  
+  /* Graveyard card image */
+  .graveyard-card-image {
+    width: 190px;
+    height: 270px;
+    object-fit: cover;
+  }
+  
+  /* Context Menu */
+  .context-menu {
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1001; /* Above the overlay */
+  }
+  
+  .context-menu button {
+    display: block;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  
+  .context-menu button:hover {
+    background-color: #0056b3;
+  }
+
+  .deck-search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5); /* Dark overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure it's above other elements */
+}
+
+/* Modal for the deck search */
+.deck-search-modal {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 20px;
+    width: 600px;
+    max-height: 80vh; /* Ensure it doesn't exceed the viewport height */
+    overflow-y: auto; /* Scroll if content overflows */
+    z-index: 1010; /* Higher than the overlay */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); /* Optional shadow */
+}
+
+/* Search input inside the modal */
+.search-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    font-size: 16px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background-color: #222;
+    color: white;
+}
+
+/* Deck search results container */
+.deck-search-results {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px; /* Space between card images */
+    width: 100%;
+}
+
+/* Individual card in the search results */
+.deck-search-card {
+    width: 150px; /* Set card size */
+    height: 210px;
+    cursor: pointer;
+}
+
+/* Image of the card */
+.deck-search-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #555;
+    transition: transform 0.2s;
+}
+
+.deck-search-card-image:hover {
+    transform: scale(1.05); /* Slight zoom on hover */
+}
+
+.counter-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .top-left {
+    top: -15px;   /* Adjust to ensure it's positioned correctly */
+    left: -15px;  /* Adjust to ensure it's positioned correctly */
+  }
+  
+  .top-right {
+    top: -15px;   /* Adjust to ensure it's positioned correctly */
+    right: -205px; /* Ensures it's aligned to the top-right corner of the card */
+  }
+  
+  .white-background {
+    background-color: white;
+    color: black;
+    border: 2px solid black;
+  }
+  
+  .black-background {
+    background-color: black;
+    color: white;
+    border: 2px solid white;
+  }
+
+  .card-text-box {
+    background-color: #333; /* Dark background */
+    color: #ddd; /* Lighter text color */
+    border: 1px solid #555; /* Slightly darker border */
+    padding: 10px;
+ 
+    width: 270px; /* Matches the width of the top-left-block */
+    height: 150px; /* Fixed height */
+    overflow-y: auto; /* Scroll if content is too long */
+    font-size: 14px;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.5); /* Subtle shadow to match the dark theme */
+    position: absolute;
+    top: 360px; /* Adjusted to be right under your top-left-block */
+ 
+    border-radius: 5px; /* Optional rounded corners */
+}
+
+.card-name {
+    font-weight: bold; /* Bold style for card name */
+    display: block;
+    margin-bottom: 5px; /* Add some space between name and card text */
+}
+
+
+.token-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .token-modal {
+    background-color: #333;
+    padding: 20px;
+    border-radius: 8px;
+    color: white;
+    max-width: 600px;
+    width: 100%;
+  }
+  
+  .token-search-results {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .token-search-card {
+    margin: 10px;
+    cursor: pointer;
+  }
+  
+  .token-search-card img {
+    width: 190px;
+    height: 267px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+  
+  /* Buttons */
+  .commander-utility-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+  
+  .untap-all-button,
+  .add-token-button {
+    background-color: #555;
+    color: white;
+    border: none;
+    padding: 10px;
+    margin-left: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+  }
+  
+  .untap-all-button:hover,
+  .add-token-button:hover {
+    background-color: #777;
+  }
