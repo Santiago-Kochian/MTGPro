@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import './Playmat.css'; // Import the corresponding CSS
 import { DeckContext } from './DeckContext'; // Import the context
+import * as XLSX from 'xlsx';
 
 const BASE_URL = 'https://gatherer.wizards.com'; // Base URL for card images
 
@@ -26,7 +27,42 @@ const Play = () => {
   const [showCommanderViewer, setShowCommanderViewer] = useState(false);
   const [showCommanderModal, setShowCommanderModal] = useState(false); // State for commander modal
   const [showTokenModal, setShowTokenModal] = useState(false);
-    // Open the token modal
+  const [tokenCards, setTokenCards] = useState([]); // Track token cards from TokensMTG
+  const [searchResults, setSearchResults] = useState([]); // For storing filtered token results
+  const [allTokens, setAllTokens] = useState([]); // State to store all token cards
+
+  useEffect(() => {
+    const fetchTokenData = async () => {
+      const response = await fetch('/TokensMTG.xlsx'); // Make sure the file path is correct
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheet = workbook.Sheets['Sheet1']; // Adjust the sheet name if necessary
+      const data = XLSX.utils.sheet_to_json(sheet);
+      setAllTokens(data); // Store all token cards in state
+    };
+  
+    fetchTokenData();
+  }, []);
+
+  const handleTokenSearch = (event) => {
+    const query = event.target.value.toLowerCase(); // Ensure query is a string
+    
+    // Filter tokens based on the search query and the 'type' column
+    const filteredTokens = allTokens.filter(token =>
+      typeof token['name'] === 'string' && // Ensure token['name'] is a string
+      token['name'].toLowerCase().includes(query) && // Search by name
+      typeof token['type'] === 'string' && // Ensure token['type'] is a string
+      token['type'].toLowerCase().includes('token') // Only show token cards
+    );
+  
+    setSearchResults(filteredTokens); // Update the token results
+  };
+  
+  const getTokenImageSrc = (card) => {
+    return card['tokenImg-src']; // Use the full external URL for token image
+  };
+
+  // Open the token modal
   const handleOpenTokenModal = () => {
     setShowTokenModal(true); // Show token modal
   };
@@ -102,11 +138,18 @@ const Play = () => {
 
   // Helper function to get the correct image source
   const getCardImageSrc = (card) => {
+    // First check if it's a token card by looking for the 'tokenImg-src' property
+    if (card['tokenImg-src']) {
+      return card['tokenImg-src']; // Return token image URL directly
+    }
+  
+    // Otherwise, assume it's a deck card and follow the existing logic
     if (card['cardImg-src'] && !card['cardImg-src'].startsWith('http')) {
       let cleanedPath = card['cardImg-src'].replace(/^\.{1,2}\/?/, '');
       return `${BASE_URL}/${cleanedPath}`;
     }
-    return card['cardImg-src'];
+  
+    return card['cardImg-src']; // Fallback for deck card image with full URL
   };
 
   // Handle mouse hover over a card
@@ -565,26 +608,32 @@ const Play = () => {
           </div>
 
           {showTokenModal && (
-          <div className="token-modal-overlay" onClick={handleCloseTokenModal}>
-            <div className="token-modal">
-              <h3>Select a Token</h3>
-              <div className="token-search-results">
-                {deckCards.map((card, index) => (
-                  <div
-                    key={index}
-                    className="token-search-card"
-                    onClick={() => handleTokenToHand(card)}
-                  >
-                    <img
-                      src={getCardImageSrc(card)}
-                      alt={card.name}
-                      className="token-search-card-image"
-                    />
-                  </div>
-                ))}
+            <div className="token-modal-overlay" onClick={handleCloseTokenModal}>
+              <div className="token-modal">
+                <h3>Select a Token</h3>
+                <input
+                  type="text"
+                  placeholder="Search tokens..."
+                  onChange={handleTokenSearch} // Hook the search function
+                  className="search-input"
+                />
+                <div className="token-search-results">
+                  {searchResults.map((card, index) => (
+                    <div
+                      key={index}
+                      className="token-search-card"
+                      onClick={() => handleTokenToHand(card)}
+                    >
+                      <img
+                        src={getCardImageSrc(card)}
+                        alt={card.name}
+                        className="token-search-card-image"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-</div>
-          </div>
+            </div>
           )}
           {showCommanderModal && (
             <div className="commander-modal-overlay" onClick={handleCloseCommanderModal}>

@@ -534,30 +534,32 @@
   }
   
   .token-modal {
-    background-color: #333;
-    padding: 20px;
+    position: relative;
+    width: 80%; /* Adjust the width as needed */
+    max-height: 400px; /* Fixed height for the modal */
+    overflow-y: auto; /* Enable vertical scroll */
+    background-color: #333; /* Modal background */
     border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     color: white;
-    max-width: 600px;
-    width: 100%;
   }
   
   .token-search-results {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Responsive card layout */
+    gap: 10px;
   }
   
   .token-search-card {
-    margin: 10px;
-    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   
   .token-search-card img {
-    width: 190px;
-    height: 267px;
-    object-fit: cover;
-    border-radius: 4px;
+    max-width: 100px;
+    height: auto;
   }
   
   /* Buttons */

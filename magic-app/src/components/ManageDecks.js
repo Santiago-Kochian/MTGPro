@@ -22,7 +22,7 @@ function ManageDecks() {
   // Function to load the Excel file and parse the data
   useEffect(() => {
     const fetchCardsData = async () => {
-      const response = await fetch('/MTGdatabase.xlsx');
+      const response = await fetch('/MTGDB.xlsx');
       const arrayBuffer = await response.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
       const sheet = workbook.Sheets['Sheet1'];
