@@ -1,87 +1,178 @@
-/* src/components/ManageDecks.css */
 .manage-decks-container {
     display: flex;
     justify-content: space-between;
     padding: 20px;
-  }
+}
   
-  .card-preview {
+.card-preview {
     width: 20%;
     text-align: center;
-  }
-  
-  .card-preview img {
-  width: 100%;
-  height: auto;
-  max-width: 300px;
-  margin-bottom: 20px;
 }
-
+  
+.card-preview img {
+    width: 100%;
+    height: auto;
+    max-width: 300px;
+    margin-bottom: 20px;
+}
+  
 .preview-image {
-  border: 1px solid #ddd;
-  padding: 5px;
-  background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 5px;
+    background-color: #fff;
 }
   
-  .preview-buttons {
+.preview-buttons {
     display: flex;
     flex-direction: column;
     gap: 10px;
-  }
+}
   
-  .deck-controls {
+.deck-controls {
     width: 75%;
-  }
+}
   
-  .deck-header {
+.deck-header {
     display: flex;
+    align-items: center;
     gap: 10px;
     margin-bottom: 20px;
-  }
+    justify-content: space-between; /* Ensure proper spacing */
+}
   
-  .deck-header input,
-  .deck-header select,
-  .deck-header button {
+.deck-name-container {
+    display: flex;
+    flex-direction: column;
+    width: 60%; /* Adjust width of this section */
+}
+  
+.deck-header input,
+.deck-header select,
+.deck-header button {
     padding: 10px;
     font-size: 1rem;
-  }
+}
   
-  .search-bar {
+.file-import-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+  
+.file-import-button {
+    padding: 10px;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+  
+.file-import-button:hover {
+    background-color: #e0e0e0;
+}
+
+.card-counter {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #333;
+}
+  
+.search-bar {
     margin-bottom: 20px;
-  }
+}
   
-  .search-bar input {
+.search-bar input {
     width: 100%;
     padding: 10px;
     font-size: 1rem;
-  }
+}
   
-  .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-  }
+.card-grid {
+    border: 2px solid #ccc;
+    padding: 10px;
+    width: 60%;
+    margin-right: 20px;
+    min-height: 500px;
+    background-color: #fff;
+}
   
-  .card-item img {
+.card-item {
+    display: inline-block;
+    width: 100px;
+    height: 140px;
+    margin: 5px;
+    overflow: hidden;
+    text-align: center;
+    cursor: pointer;
+}
+  
+.card-item img {
     width: 100%;
     height: auto;
-    cursor: pointer;
-  }
+    border-radius: 5px;
+    transition: transform 0.2s ease-in-out;
+}
   
-  .search-results {
-    margin-top: 10px;
-    max-height: 200px;
-    overflow-y: auto;
+.search-results-section {
+    width: 35%;
+    border-left: 2px solid #ddd;
+    padding-left: 20px;
     background-color: #f9f9f9;
-    border: 1px solid #ddd;
-  }
+    overflow-y: auto;
+    max-height: 500px;
+}
   
-  .search-result-item {
+.search-results {
+    border-left: 1px solid #ccc;
+    padding-left: 10px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    width: 250px;
+    background-color: #f9f9f9;
+}
+  
+.search-result-item {
     padding: 10px;
+    margin-bottom: 5px;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
     cursor: pointer;
-    border-bottom: 1px solid #ddd;
-  }
+    transition: background-color 0.2s ease;
+}
   
-  .search-result-item:hover {
-    background-color: #eee;
-  }
+.search-result-item:hover {
+    background-color: #f0f0f0;
+}
+  
+.search-result-image {
+    width: 50px;
+    height: 70px;
+    margin-right: 10px;
+}
+  
+.search-result-item p {
+    margin: 0;
+    text-align: center;
+}
+  
+.card-search-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
+  
+.search-results-section::-webkit-scrollbar {
+    width: 8px;
+}
+  
+.search-results-section::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+}
+  
+.search-results-section::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}

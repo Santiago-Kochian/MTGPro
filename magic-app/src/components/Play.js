@@ -2,10 +2,13 @@ import React, { useContext, useState, useEffect, useRef } from 'react';
 import './Playmat.css'; // Import the corresponding CSS
 import { DeckContext } from './DeckContext'; // Import the context
 import * as XLSX from 'xlsx';
+import PlaymatMirror from './PlaymatMirror'; // Import the PlaymatMirror component
+import ReactDOM from 'react-dom';
 
 const BASE_URL = 'https://gatherer.wizards.com'; // Base URL for card images
 
 const Play = () => {
+  
   const [selectedDeck, setSelectedDeck] = useState(''); // Track selected deck
   const [hand, setHand] = useState([]); // Track cards in hand
   const [hoveredCard, setHoveredCard] = useState(null); // Track hovered card for preview
@@ -21,7 +24,7 @@ const Play = () => {
   const [contextMenu, setContextMenu] = useState(null); // Track context menu state
   const [showDeckSearch, setShowDeckSearch] = useState(false); // Track deck search modal
   const [searchQuery, setSearchQuery] = useState(''); // Search query for the deck search modal
-  const { savedDecks } = useContext(DeckContext); // Access saved decks from context
+  const { savedDecks, gameState, updateGameState } = useContext(DeckContext); // Access gameState and updateGameState
   const [counters, setCounters] = useState({}); // Track counters for cards
   const [commander, setCommander] = useState(null); // Track the commander
   const [showCommanderViewer, setShowCommanderViewer] = useState(false);
@@ -30,6 +33,71 @@ const Play = () => {
   const [tokenCards, setTokenCards] = useState([]); // Track token cards from TokensMTG
   const [searchResults, setSearchResults] = useState([]); // For storing filtered token results
   const [allTokens, setAllTokens] = useState([]); // State to store all token cards
+  const [mirrorWindow, setMirrorWindow] = useState(null); // Track mirror window
+
+  // Open the mirror window and pass the game state
+  const handleMirrorOpen = () => {
+    const mirrorWindow = window.open('/mirror', '_blank'); 
+    setMirrorWindow(mirrorWindow); 
+
+    // Send initial state to the mirror window
+    mirrorWindow.onload = () => {
+      mirrorWindow.postMessage({ 
+        type: 'INITIAL_STATE', 
+        data: {
+          ...gameState, 
+          cardCount: savedDecks[selectedDeck].cards.length
+        }
+      }, '*');
+    };
+  };
+
+
+  // Use effect to listen to gameState changes and update the mirror window
+  useEffect(() => {
+    if (mirrorWindow && !mirrorWindow.closed) {
+      const cardCount = savedDecks[selectedDeck].cards.length;
+      mirrorWindow.postMessage({
+        type: 'UPDATE_STATE',
+        data: {
+          ...gameState,
+          cardCount: cardCount
+        }
+      }, '*');
+    }
+  }, [gameState, selectedDeck, mirrorWindow, savedDecks]);
+  
+
+  // Sync game state to the mirror window/tab
+  const updateMirror = () => {
+    if (mirrorWindow && !mirrorWindow.closed) {
+      ReactDOM.createPortal(
+        <PlaymatMirror
+          hand={hand}
+          largeZone={largeZone}
+          graveyard={graveyard}
+          exiled={exiled}
+          commander={commander}
+          cardPositions={cardPositions}
+          tappedCards={tappedCards}
+          
+        />,
+        mirrorWindow.document.body
+      );
+    }
+  };
+  useEffect(() => {
+    if (mirrorWindow && !mirrorWindow.closed) {
+      ReactDOM.createPortal(
+        <PlaymatMirror hand={hand} largeZone={largeZone} selectedDeck={selectedDeck} />,
+        mirrorWindow.document.body
+      );
+    }
+  }, [mirrorWindow, hand, largeZone, selectedDeck]);
+
+  useEffect(() => {
+    updateMirror(); // Update mirror when game state changes
+  }, [hand, largeZone, graveyard, exiled, commander, cardPositions, tappedCards]);
 
   useEffect(() => {
     const fetchTokenData = async () => {
@@ -76,54 +144,119 @@ const Play = () => {
 
   // Function to bring a token (or card for now) from the "token" modal to the hand
   const handleTokenToHand = (card) => {
-    setHand([...hand, card]);
-    setShowTokenModal(false); // Close the modal after adding to hand
+    // Add the token card to the hand
+    setHand((prevHand) => {
+      const updatedHand = [...prevHand, card];
+  
+      // Prepare updated game state for the mirror
+      const updatedGameState = {
+        ...gameState,
+        hand: updatedHand, // Update hand with the new token
+      };
+  
+      // Update the game state globally (context)
+      updateGameState(updatedGameState);
+  
+      // Send the updated game state to the mirror window
+      if (mirrorWindow && !mirrorWindow.closed) {
+        mirrorWindow.postMessage({ type: 'UPDATE_STATE', data: updatedGameState }, '*');
+      }
+  
+      return updatedHand;
+    });
+  
+    // Close the token modal after adding to hand
+    setShowTokenModal(false);
   };
+  
 
   const handleCounterClick = (card, position) => {
-    const currentCount = counters[card.name]?.[position] || 0;
-
+    const cardId = card.id || `${card.name}-${Date.now()}`; // Use cardId to ensure uniqueness
+    const currentCount = counters[cardId]?.[position] || 0;
+  
     const newCount = window.prompt(
       `Update ${position === 'left' ? 'Power' : 'Toughness'} counter for ${card.name}:`,
       currentCount
     );
-
+  
     if (newCount !== null && !isNaN(newCount)) {
+      // Update local state for counters
       setCounters((prevCounters) => ({
         ...prevCounters,
-        [card.name]: {
-          ...prevCounters[card.name],
+        [cardId]: {
+          ...prevCounters[cardId],
           [position]: parseInt(newCount, 10),
         },
       }));
+  
+      // Prepare the updated game state
+      const updatedGameState = {
+        ...gameState,
+        largeZone: gameState.largeZone.map((existingCard) => {
+          if (existingCard.id === cardId) {
+            return {
+              ...existingCard,
+              counters: {
+                ...existingCard.counters,
+                [position]: parseInt(newCount, 10),
+              },
+            };
+          }
+          return existingCard;
+        }),
+      };
+  
+      // Update the game state in the context
+      updateGameState(updatedGameState);
+  
+      // Send the updated game state to the mirror window
+      if (mirrorWindow && !mirrorWindow.closed) {
+        mirrorWindow.postMessage({
+          type: 'UPDATE_STATE',
+          data: updatedGameState,
+        }, '*');
+      }
     }
   };
+  
+  
   
   // Function to handle deck selection and shuffle the deck
   const handleDeckChange = (event) => {
     const deckName = event.target.value;
     setSelectedDeck(deckName);
+  
     if (savedDecks[deckName]) {
       const { cards, commander: deckCommander } = savedDecks[deckName];
-
-      // Set the commander and remove it from the deck
+  
       if (deckCommander) {
-        setCommander(deckCommander);
+        setCommander(deckCommander); // Set the commander
       }
-      
+  
+      // Remove the commander from the rest of the deck to prevent it from being drawn
       const deckWithoutCommander = cards.filter(card => card.name !== deckCommander?.name);
-      
+  
+      // Shuffle the deck without drawing any cards to the hand
       const shuffledDeck = [...deckWithoutCommander];
-      shuffleDeck(shuffledDeck); // Shuffle when a deck is selected
-      savedDecks[deckName].cards = shuffledDeck; // Update deck with shuffled cards
+      shuffleDeck(shuffledDeck);
+  
+      savedDecks[deckName].cards = shuffledDeck; // Update the deck with shuffled cards
+      setHand([]); // Start with an empty hand
+  
+      // Immediately update the game state with the commanderZone data
+      updateGameState({
+        ...gameState,
+        commanderZone: deckCommander // Set the commanderZone with the selected commander
+      });
     }
   };
+  
 
   // Shuffle function
   const shuffleDeck = (deck) => {
     for (let i = deck.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [deck[i], deck[j]] = [deck[j], deck[i]]; // Swap elements
+      [deck[i], deck[j]] = [deck[j], deck[i]];
     }
   };
 
@@ -155,7 +288,15 @@ const Play = () => {
   // Handle mouse hover over a card
   const handleCardHover = (card) => {
     setHoveredCard(card); // Set the hovered card for preview
-  };
+
+    // Check if the card is in the hand, and if not, send the hover data to the mirror tab
+    if (!hand.includes(card) && mirrorWindow && !mirrorWindow.closed) {
+        mirrorWindow.postMessage({
+            type: 'HOVER_CARD', // Custom message type for hover card
+            data: card // Send the hovered card data
+        }, '*');
+    }
+};
   const handleCardMouseLeave = () => {
   };
 
@@ -174,45 +315,130 @@ const Play = () => {
   const handleDrop = (zone, event) => {
     event.preventDefault();
     const cardData = JSON.parse(event.dataTransfer.getData('text/plain')); // Retrieve card data
-  
-    // Handle drop logic based on the target zone
+
+    // Each card instance should have a unique id
+    const cardId = cardData.id || `${cardData.name}-${Date.now()}`; // Create a unique ID if one doesn't exist
+
+    // Get the necessary data for the card
+    const currentCardInLargeZone = largeZone.find(card => card.id === cardId);
+    const cardCounters = currentCardInLargeZone ? currentCardInLargeZone.counters : counters[cardId] || { left: 0, right: 0 };
+
+    // Get the current mouse position relative to the drop zone
+    const largeBlockRect = event.currentTarget.getBoundingClientRect();
+    const dropX = event.clientX - largeBlockRect.left - dragOffset.x;
+    const dropY = event.clientY - largeBlockRect.top - dragOffset.y;
+
+    // This will only update the position of the card being dropped
+    const newCardPosition = { x: dropX, y: dropY };
+
+    let updatedGameState = { ...gameState };
+
     if (zone === 'graveyard') {
-      setGraveyard([...graveyard, cardData]); // Add card to graveyard
-      setHand(hand.filter((card) => card.name !== cardData.name)); // Remove from hand
-      setLargeZone(largeZone.filter((card) => card.name !== cardData.name)); // Remove from large zone
+        const updatedGraveyard = [
+            ...graveyard.filter((card) => card.id !== cardId),
+            { ...cardData, id: cardId, counters: cardCounters }
+        ];
+
+        setGraveyard(updatedGraveyard);
+        setHand(hand.filter((card) => card.id !== cardId));
+        setLargeZone(largeZone.filter((card) => card.id !== cardId));
+
+        updatedGameState = {
+            ...updatedGameState,
+            graveyard: updatedGraveyard,
+            hand: hand.filter((card) => card.id !== cardId),
+            largeZone: largeZone.filter((card) => card.id !== cardId),
+        };
+
     } else if (zone === 'exiled') {
-      setExiled([...exiled, cardData]); // Add card to exiled zone
-      setHand(hand.filter((card) => card.name !== cardData.name)); // Remove from hand
-      setLargeZone(largeZone.filter((card) => card.name !== cardData.name)); // Remove from large zone
+        const updatedExiled = [
+            ...exiled.filter((card) => card.id !== cardId),
+            { ...cardData, id: cardId, counters: cardCounters }
+        ];
+
+        setExiled(updatedExiled);
+        setHand(hand.filter((card) => card.id !== cardId));
+        setLargeZone(largeZone.filter((card) => card.id !== cardId));
+
+        updatedGameState = {
+            ...updatedGameState,
+            exiled: updatedExiled,
+            hand: hand.filter((card) => card.id !== cardId),
+            largeZone: largeZone.filter((card) => card.id !== cardId),
+        };
+
     } else if (zone === 'large') {
-      const largeBlockRect = event.currentTarget.getBoundingClientRect();
-      const dropX = event.clientX - largeBlockRect.left - dragOffset.x;
-      const dropY = event.clientY - largeBlockRect.top - dragOffset.y;
-  
-      setLargeZone([...largeZone, cardData]); // Add card to large zone
-      setCardPositions((prevPositions) => ({
-        ...prevPositions,
-        [cardData.name]: { x: dropX, y: dropY },
-      }));
-      setHand(hand.filter((card) => card.name !== cardData.name)); // Remove from hand
+        // Update the position of the card in the large zone
+        const updatedLargeZone = largeZone.map((card) => {
+            if (card.id === cardId) {
+                // If it's the card being moved, update its position and preserve counters
+                return {
+                    ...card,
+                    position: newCardPosition,  // Update only the position
+                    counters: cardCounters      // Preserve the counters
+                };
+            } else {
+                // For other cards (like tapped cards), keep their existing position
+                return {
+                    ...card,
+                    position: cardPositions[card.id] || card.position // Keep the existing position for other cards
+                };
+            }
+        });
+
+        const cardExists = updatedLargeZone.some((card) => card.id === cardId);
+        if (!cardExists) {
+            updatedLargeZone.push({ ...cardData, id: cardId, counters: cardCounters, position: newCardPosition });
+        }
+
+        setLargeZone(updatedLargeZone);
+        setCardPositions((prevPositions) => ({
+            ...prevPositions,
+            [cardId]: newCardPosition,
+        }));
+        setHand(hand.filter((card) => card.id !== cardId));
+
+        updatedGameState = {
+            ...updatedGameState,
+            largeZone: updatedLargeZone,
+            hand: hand.filter((card) => card.id !== cardId),
+            cardPositions: {
+                ...cardPositions,
+                [cardId]: newCardPosition,
+            },
+        };
+
     } else if (zone === 'commander') {
-      // Logic for handling the commander zone
-      if (commander && cardData.name === commander.name) {
-        setCommander(cardData); // Return commander to the commander zone
-        setHand(hand.filter((card) => card.name !== cardData.name)); // Remove from hand
-        setLargeZone(largeZone.filter((card) => card.name !== cardData.name)); // Remove from large zone
-        setExiled(exiled.filter((card) => card.name !== cardData.name)); // Remove from exiled zone
-        setGraveyard(graveyard.filter((card) => card.name !== cardData.name)); // Remove from graveyard
-      } else if (!commander) {
-        // In case no commander was set, we allow the card to be placed in the commander zone
         setCommander(cardData);
-        setHand(hand.filter((card) => card.name !== cardData.name)); // Remove from hand
-        setLargeZone(largeZone.filter((card) => card.name !== cardData.name)); // Remove from large zone
-        setExiled(exiled.filter((card) => card.name !== cardData.name)); // Remove from exiled zone
-        setGraveyard(graveyard.filter((card) => card.name !== cardData.name)); // Remove from graveyard
-      }
+        setHand(hand.filter((card) => card.id !== cardId));
+        setLargeZone(largeZone.filter((card) => card.id !== cardId));
+        setExiled(exiled.filter((card) => card.id !== cardId));
+        setGraveyard(graveyard.filter((card) => card.id !== cardId));
+
+        updatedGameState = {
+            ...updatedGameState,
+            commanderZone: { ...cardData, id: cardId, counters: cardCounters },
+            hand: hand.filter((card) => card.id !== cardId),
+            largeZone: largeZone.filter((card) => card.id !== cardId),
+            exiled: exiled.filter((card) => card.id !== cardId),
+            graveyard: graveyard.filter((card) => card.id !== cardId),
+        };
     }
-  };
+
+    // Update the gameState in the context
+    updateGameState(updatedGameState);
+
+    // Send the updated state to the mirror window
+    if (mirrorWindow && !mirrorWindow.closed) {
+        mirrorWindow.postMessage({
+            type: 'UPDATE_STATE',
+            data: updatedGameState,
+        }, '*');
+    }
+};
+
+
+  
   
   const handleDragOver = (event) => {
     event.preventDefault(); // Allow dropping
@@ -242,73 +468,176 @@ const Play = () => {
   const handleReturnToDeck = () => {
     if (contextMenu && contextMenu.card) {
       const selectedCard = contextMenu.card;
-      
-      // If the card is the commander, remove it from commanderZone and add it to the deck
+  
+      // Define the updated game state
+      let updatedGameState = { ...gameState };
+  
+      // Add the card back to the deck
+      savedDecks[selectedDeck].cards.push(selectedCard);
+  
+      // Handle the commander case
       if (selectedCard === commander) {
         setCommander(null);
-        savedDecks[selectedDeck].cards.push(selectedCard); // Add commander to the deck
+        updatedGameState = {
+          ...updatedGameState,
+          commanderZone: null, // Remove commander from commander zone
+          cardCount: savedDecks[selectedDeck].cards.length, // Update the card count
+        };
       } else {
-        // Standard handling for other cards
-        savedDecks[selectedDeck].cards.push(selectedCard);
+        // Remove the card from wherever it was (hand, largeZone, graveyard, exiled)
         setHand(hand.filter((card) => card !== selectedCard));
         setLargeZone(largeZone.filter((card) => card !== selectedCard));
         setGraveyard(graveyard.filter((card) => card !== selectedCard));
         setExiled(exiled.filter((card) => card !== selectedCard));
+  
+        updatedGameState = {
+          ...updatedGameState,
+          hand: hand.filter((card) => card !== selectedCard),
+          largeZone: largeZone.filter((card) => card !== selectedCard),
+          graveyard: graveyard.filter((card) => card !== selectedCard),
+          exiled: exiled.filter((card) => card !== selectedCard),
+          cardCount: savedDecks[selectedDeck].cards.length, // Update the card count
+        };
       }
-      
+  
+      // Update the game state in the context
+      updateGameState(updatedGameState);
+  
+      // Send the updated state to the mirror window
+      if (mirrorWindow && !mirrorWindow.closed) {
+        mirrorWindow.postMessage({
+          type: 'UPDATE_STATE',
+          data: updatedGameState,
+        }, '*');
+      }
+  
       setContextMenu(null); // Close the context menu
     }
   };
+  
 
   // Function to send card from any zone back to hand
   const handleReturnToHand = () => {
     if (contextMenu && contextMenu.card) {
       const selectedCard = contextMenu.card;
-      
+      const cardId = selectedCard.id || `${selectedCard.name}-${Date.now()}`; // Ensure we have a unique card ID
+  
+      // Define updated game state
+      let updatedGameState = { ...gameState };
+  
       // If the card is the commander, remove it from commanderZone and add it to hand
       if (selectedCard === commander) {
         setCommander(null);
         setHand([...hand, selectedCard]);
+        updatedGameState = {
+          ...updatedGameState,
+          commanderZone: null, // Remove the commander from the commander zone
+          hand: [...hand, selectedCard],
+        };
       } else {
-        // Standard handling for other cards
+        // Standard handling for other cards: remove from zones and add to hand
         setHand([...hand, selectedCard]);
-        setLargeZone(largeZone.filter((card) => card !== selectedCard));
-        setGraveyard(graveyard.filter((card) => card !== selectedCard));
-        setExiled(exiled.filter((card) => card !== selectedCard));
+        setLargeZone(largeZone.filter((card) => card.id !== cardId));
+        setGraveyard(graveyard.filter((card) => card.id !== cardId));
+        setExiled(exiled.filter((card) => card.id !== cardId));
+  
+        updatedGameState = {
+          ...updatedGameState,
+          hand: [...hand, selectedCard],
+          largeZone: largeZone.filter((card) => card.id !== cardId),
+          graveyard: graveyard.filter((card) => card.id !== cardId),
+          exiled: exiled.filter((card) => card.id !== cardId),
+        };
       }
-      
+  
+      // Update the game state in the context
+      updateGameState(updatedGameState);
+  
+      // Send the updated state to the mirror window
+      if (mirrorWindow && !mirrorWindow.closed) {
+        mirrorWindow.postMessage({
+          type: 'UPDATE_STATE',
+          data: updatedGameState,
+        }, '*');
+      }
+  
       setContextMenu(null); // Close the context menu
     }
   };
+  
+  
 
   // Tap or untap the card in the large block
   const handleTapUntapCard = () => {
     if (contextMenu) {
       const selectedCard = contextMenu.card;
-      const isTapped = tappedCards[selectedCard.name];
-      const offsetY = 38.5; // Calculated offset for a 90-degree rotation
-      const offsetX = 228.5;
-
+      const cardId = selectedCard.id || `${selectedCard.name}-${Date.now()}`; // Ensure we have a unique card ID
+  
+      const isTapped = tappedCards[cardId];
+      const offsetY = 38.5; // Offset for Y position when rotating
+      const offsetX = 228.5; // Offset for X position when rotating
+  
+      // If the card is tapped or untapped, update its position
+      const newXPosition = isTapped
+        ? cardPositions[cardId]?.x - offsetX // Remove offset if untapping
+        : cardPositions[cardId]?.x + offsetX; // Apply offset if tapping
+  
+      const newYPosition = isTapped
+        ? cardPositions[cardId]?.y - offsetY // Remove offset if untapping
+        : cardPositions[cardId]?.y + offsetY; // Apply offset if tapping
+  
       setCardPositions((prevPositions) => ({
         ...prevPositions,
-        [selectedCard.name]: {
-          x: isTapped
-            ? prevPositions[selectedCard.name]?.x - offsetX
-            : prevPositions[selectedCard.name]?.x + offsetX, 
-          y: isTapped 
-            ? prevPositions[selectedCard.name]?.y - offsetY // Untap: move back up
-            : prevPositions[selectedCard.name]?.y + offsetY // Tap: move down
+        [cardId]: {
+          x: newXPosition,
+          y: newYPosition,
         },
       }));
   
+      // Update tapped state
       setTappedCards((prev) => ({
         ...prev,
-        [selectedCard.name]: !isTapped, // Toggle tapped state
+        [cardId]: !isTapped, // Toggle tapped state
       }));
+  
+      // Prepare updated game state
+      const updatedGameState = {
+        ...gameState,
+        tappedCards: {
+          ...gameState.tappedCards,
+          [cardId]: !isTapped, // Update the tapped state for this card
+        },
+        largeZone: gameState.largeZone.map((card) => {
+          if (card.id === cardId) {
+            return {
+              ...card,
+              isTapped: !isTapped, // Update the tapped state
+              position: { x: newXPosition, y: newYPosition }, // Pass the updated position with offsets
+            };
+          }
+          return card;
+        }),
+      };
+  
+      // Update the game state globally (context)
+      updateGameState(updatedGameState);
+  
+      // Send the updated game state to the mirror window immediately after tap/untap
+      if (mirrorWindow && !mirrorWindow.closed) {
+        mirrorWindow.postMessage({ type: 'UPDATE_STATE', data: updatedGameState }, '*');
+      }
   
       setContextMenu(null); // Close the context menu
     }
   };
+  
+  
+  
+
+
+
+
+
 
   const handleUntapAll = () => {
     setTappedCards((prevTapped) => {
@@ -318,19 +647,39 @@ const Play = () => {
         const updatedPositions = { ...prevPositions };
   
         largeZone.forEach((card) => {
-          const isTapped = prevTapped[card.name]; // Check if the card is currently tapped
+          const isTapped = prevTapped[card.id]; // Check if the card is currently tapped by its id
           const offsetY = 38.5; // Calculated offset for a 90-degree rotation
           const offsetX = 228.5;
   
           if (isTapped) {
             // If the card is tapped, untap and adjust position
-            updatedPositions[card.name] = {
-              x: prevPositions[card.name]?.x - offsetX, // Move back to original X position
-              y: prevPositions[card.name]?.y - offsetY, // Move back to original Y position
+            updatedPositions[card.id] = {
+              x: prevPositions[card.id]?.x - offsetX, // Move back to original X position
+              y: prevPositions[card.id]?.y - offsetY, // Move back to original Y position
             };
-            updatedTapped[card.name] = false; // Untap the card
+            updatedTapped[card.id] = false; // Untap the card
           }
         });
+  
+        // Prepare updated game state for the mirror
+        const updatedGameState = {
+          ...gameState,
+          largeZone: largeZone.map((card) => ({
+            ...card,
+            isTapped: false, // All cards are now untapped
+            position: updatedPositions[card.id], // Include updated positions using card.id
+          })),
+          tappedCards: updatedTapped, // Ensure tappedCards state is also updated
+          cardPositions: updatedPositions, // Ensure the updated card positions are included
+        };
+  
+        // Update game state globally (context)
+        updateGameState(updatedGameState);
+  
+        // Send the updated game state to the mirror window
+        if (mirrorWindow && !mirrorWindow.closed) {
+          mirrorWindow.postMessage({ type: 'UPDATE_STATE', data: updatedGameState }, '*');
+        }
   
         return updatedPositions;
       });
@@ -338,6 +687,9 @@ const Play = () => {
       return updatedTapped;
     });
   };
+  
+  
+
   // Function to handle drawing a card (clicking on the deck)
   const handleDrawCard = () => {
     if (selectedDeck && savedDecks[selectedDeck]) {
@@ -346,11 +698,31 @@ const Play = () => {
         alert('No more cards in the deck!');
         return;
       }
-      const drawnCard = deckCards[0]; // Draw the first card
-      const remainingDeck = deckCards.slice(1); // Remove the drawn card from the deck
 
+      // Draw the first card and update the hand
+      const drawnCard = deckCards[0];
+      const remainingDeck = deckCards.slice(1);
       setHand([...hand, drawnCard]);
-      savedDecks[selectedDeck].cards = remainingDeck; // Update the deck in context
+      savedDecks[selectedDeck].cards = remainingDeck;
+
+      // Update gameState in context
+      updateGameState({
+        ...gameState,
+        hand: [...hand, drawnCard],
+        cardCount: remainingDeck.length // Update card count
+      });
+
+      // Update mirror window after drawing a card
+      if (mirrorWindow && !mirrorWindow.closed) {
+        mirrorWindow.postMessage({
+          type: 'UPDATE_STATE',
+          data: {
+            ...gameState,
+            hand: [...hand, drawnCard],
+            cardCount: remainingDeck.length
+          }
+        }, '*');
+      }
     }
   };
 
@@ -405,13 +777,38 @@ const Play = () => {
 
   // Function to bring a card from the deck to the hand
   const handleCardToHand = (card) => {
+    // Add the selected card to the hand
     setHand([...hand, card]);
+
+    // Remove the card from the deck using the card's id instead of name to prevent issues with multiple copies
     savedDecks[selectedDeck].cards = savedDecks[selectedDeck].cards.filter(
-      (deckCard) => deckCard.name !== card.name
+      (deckCard) => deckCard.id !== card.id
     );
-    setShowDeckSearch(false); // Close modal after selecting a card
-    setSearchQuery(''); // Reset search query
-  };
+
+    // Update game state with the new hand and deck count
+    const updatedGameState = {
+      ...gameState,
+      hand: [...hand, card], // Update the hand with the new card
+      cardCount: savedDecks[selectedDeck].cards.length, // Update the card count in the deck
+    };
+
+    // Update the game state in the context
+    updateGameState(updatedGameState);
+
+    // Send the updated state to the mirror window
+    if (mirrorWindow && !mirrorWindow.closed) {
+      mirrorWindow.postMessage({
+        type: 'UPDATE_STATE',
+        data: updatedGameState,
+      }, '*');
+    }
+
+    // Close the deck search modal and reset the search query
+    setShowDeckSearch(false);
+    setSearchQuery('');
+};
+
+  
 
   // If a deck is selected, get the deck data and card count
   const selectedDeckData = savedDecks[selectedDeck];
@@ -486,11 +883,11 @@ const Play = () => {
           >
             <div className="large-placeholder">Large Block</div>
             {largeZone.map((card, index) => (
-              <div key={index} className="large-card-container" style={{
+              <div key={card.id || index} className="large-card-container" style={{
                 position: 'absolute',
-                left: `${cardPositions[card.name]?.x}px`,
-                top: `${cardPositions[card.name]?.y}px`,
-                transform: tappedCards[card.name] ? 'rotate(90deg)' : 'rotate(0deg)',
+                left: `${cardPositions[card.id]?.x}px`, // Use card.id for unique positions
+                top: `${cardPositions[card.id]?.y}px`,
+                transform: tappedCards[card.id] ? 'rotate(90deg)' : 'rotate(0deg)', // Use card.id for tap/untap rotation
               }}>
                 {/* Card Image */}
                 <img
@@ -498,18 +895,19 @@ const Play = () => {
                   alt={card.name}
                   className="playable-card"
                   draggable="true"
-                  onDragStart={(event) => handleDragStart(card, event)}
+                  onClick={() => handleTapUntapCard(card)} // Add click event to tap/untap the card
+                  onDragStart={(event) => handleDragStart(card, event)} // Drag card
                   onMouseEnter={() => handleCardHover(card)} // Show card in top-left on hover
                   onMouseLeave={handleCardMouseLeave} // Clear preview on mouse leave
                   onContextMenu={(event) => handleCardContextClick(event, card)} // Right-click menu
                 />
-  
+              
                 {/* Counter Circles */}
                 <div className="counter-circle top-left white-background" onClick={() => handleCounterClick(card, 'left')}>
-                  {counters[card.name]?.left || 0}
+                  {counters[card.id]?.left || 0} {/* Use card.id for individual counters */}
                 </div>
                 <div className="counter-circle top-right black-background" onClick={() => handleCounterClick(card, 'right')}>
-                  {counters[card.name]?.right || 0}
+                  {counters[card.id]?.right || 0} {/* Use card.id for individual counters */}
                 </div>
               </div>
             ))}
@@ -531,6 +929,11 @@ const Play = () => {
                 />
               ))}
             </div>
+            <div className="mirror-button-container">
+          <button className="mirror-button" onClick={handleMirrorOpen}>
+            Open Mirror
+          </button>
+        </div>
           </div>
         </div>
   
@@ -670,7 +1073,7 @@ const Play = () => {
           <button onClick={handleReturnToDeck}>Return to Deck</button>
           {largeZone.includes(contextMenu.card) && (
             <button onClick={handleTapUntapCard}>
-              {tappedCards[contextMenu.card.name] ? 'Untap' : 'Tap'}
+              {tappedCards[contextMenu.card.id] ? 'Untap' : 'Tap'} {/* Use the unique cardId instead of card.name */}
             </button>
           )}
         </div>

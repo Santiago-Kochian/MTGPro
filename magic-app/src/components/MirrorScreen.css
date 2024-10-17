@@ -1,0 +1,30 @@
+.mirror-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  .top-left-block,
+  .large-block,
+  .hand-block,
+  .deck-block,
+  .commander-block {
+    /* Adjust these to match the layout from the Playmat */
+    border: 1px solid black;
+    height: 100px;
+    margin: 10px;
+  }
+  
+  .bottom-container {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .large-block {
+    width: 60%;
+  }
+  
+  .hand-block, .deck-block, .commander-block {
+    width: 15%;
+  }
+  

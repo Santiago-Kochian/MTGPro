@@ -1,20 +1,21 @@
-// src/App.js
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Play from './components/Play';
 import ManageDecks from './components/ManageDecks';
-import { DeckProvider } from './components/DeckContext'; // Import DeckProvider for global state
-import './App.css'; // Optional: create a CSS file for styling
+import { DeckProvider } from './components/DeckContext';
+import './App.css';
+import PlaymatMirror from './components/PlaymatMirror';
 
 function App() {
   return (
-    <DeckProvider> {/* Wrap the app in DeckProvider to provide global deck state */}
+    <DeckProvider>
       <Router>
         <div className="App">
           <Routes>
             <Route path="/" element={<MainMenu />} />
             <Route path="/play" element={<Play />} />
             <Route path="/manage-decks" element={<ManageDecks />} />
+            <Route path="/mirror" element={<PlaymatMirror />} /> {/* Mirror route */}
           </Routes>
         </div>
       </Router>
@@ -33,7 +34,6 @@ function MainMenu() {
         <Link to="/manage-decks">
           <button className="menu-button">Manage Decks</button>
         </Link>
-        <button className="menu-button" onClick={() => window.close()}>Exit</button>
       </div>
     </div>
   );
