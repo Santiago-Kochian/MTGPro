@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/MTGPro/static/css/main.631def5c.css",
-    "main.js": "/MTGPro/static/js/main.ef4812f9.js",
+    "main.js": "/MTGPro/static/js/main.f42d148b.js",
     "static/js/453.c4c50dc7.chunk.js": "/MTGPro/static/js/453.c4c50dc7.chunk.js",
     "index.html": "/MTGPro/index.html",
     "main.631def5c.css.map": "/MTGPro/static/css/main.631def5c.css.map",
-    "main.ef4812f9.js.map": "/MTGPro/static/js/main.ef4812f9.js.map",
+    "main.f42d148b.js.map": "/MTGPro/static/js/main.f42d148b.js.map",
     "453.c4c50dc7.chunk.js.map": "/MTGPro/static/js/453.c4c50dc7.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.631def5c.css",
-    "static/js/main.ef4812f9.js"
+    "static/js/main.f42d148b.js"
   ]
 }
