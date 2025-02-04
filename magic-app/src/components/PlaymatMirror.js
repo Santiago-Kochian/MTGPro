@@ -123,7 +123,7 @@ const PlaymatMirror = () => {
                   <img
                     src={getCardImageSrc(card)} // Show the face-up image for cards on the playmat
                     alt={name}
-                    className="playable-card"
+                    className="playmat-card"
                   />
                   {/* Counter Circles */}
                   <div className="counter-circle top-left white-background">

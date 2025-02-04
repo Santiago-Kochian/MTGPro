@@ -4,6 +4,7 @@ import { DeckContext } from './DeckContext'; // Import the context
 import * as XLSX from 'xlsx';
 import PlaymatMirror from './PlaymatMirror'; // Import the PlaymatMirror component
 import ReactDOM from 'react-dom';
+import { v4 as uuidv4 } from 'uuid';
 
 const BASE_URL = 'https://gatherer.wizards.com'; // Base URL for card images
 
@@ -37,9 +38,9 @@ const Play = () => {
 
   // Open the mirror window and pass the game state
   const handleMirrorOpen = () => {
-    const mirrorWindow = window.open('/mirror', '_blank'); 
+    const mirrorWindow = window.open(`${window.location.origin}/MTGPro/#/mirror`, '_blank'); 
     setMirrorWindow(mirrorWindow); 
-
+  
     // Send initial state to the mirror window
     mirrorWindow.onload = () => {
       mirrorWindow.postMessage({ 
@@ -51,7 +52,7 @@ const Play = () => {
       }, '*');
     };
   };
-
+  
 
   // Use effect to listen to gameState changes and update the mirror window
   useEffect(() => {
@@ -101,14 +102,21 @@ const Play = () => {
 
   useEffect(() => {
     const fetchTokenData = async () => {
-      const response = await fetch('/TokensMTG.xlsx'); // Make sure the file path is correct
+      const response = await fetch(`${process.env.PUBLIC_URL}/TokensMTG.xlsx`); // Make sure the file path is correct
       const arrayBuffer = await response.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
       const sheet = workbook.Sheets['Sheet1']; // Adjust the sheet name if necessary
       const data = XLSX.utils.sheet_to_json(sheet);
-      setAllTokens(data); // Store all token cards in state
+
+      // Assign a unique ID to each token card
+      const tokensWithIds = data.map(token => ({
+        ...token,
+        id: uuidv4() // Assign unique ID to each token
+      }));
+
+      setAllTokens(tokensWithIds); // Store all token cards with IDs in state
     };
-  
+
     fetchTokenData();
   }, []);
 
@@ -409,24 +417,37 @@ const Play = () => {
         };
 
     } else if (zone === 'commander') {
-        setCommander(cardData);
-        setHand(hand.filter((card) => card.id !== cardId));
-        setLargeZone(largeZone.filter((card) => card.id !== cardId));
-        setExiled(exiled.filter((card) => card.id !== cardId));
-        setGraveyard(graveyard.filter((card) => card.id !== cardId));
-
-        updatedGameState = {
-            ...updatedGameState,
-            commanderZone: { ...cardData, id: cardId, counters: cardCounters },
-            hand: hand.filter((card) => card.id !== cardId),
-            largeZone: largeZone.filter((card) => card.id !== cardId),
-            exiled: exiled.filter((card) => card.id !== cardId),
-            graveyard: graveyard.filter((card) => card.id !== cardId),
-        };
-    }
-
-    // Update the gameState in the context
-    updateGameState(updatedGameState);
+      // When dropping a card into the commander zone, set it as the commander and remove it from other zones
+      setCommander(cardData);
+      setHand(hand.filter((card) => card.id !== cardId));
+      setLargeZone(largeZone.filter((card) => card.id !== cardId));
+      setExiled(exiled.filter((card) => card.id !== cardId));
+      setGraveyard(graveyard.filter((card) => card.id !== cardId));
+  
+      updatedGameState = {
+          ...updatedGameState,
+          commanderZone: { ...cardData, id: cardId, counters: cardCounters },
+          hand: hand.filter((card) => card.id !== cardId),
+          largeZone: largeZone.filter((card) => card.id !== cardId),
+          exiled: exiled.filter((card) => card.id !== cardId),
+          graveyard: graveyard.filter((card) => card.id !== cardId),
+      };
+  
+  } else if (zone === 'large' && cardData === commander) {
+      // When dragging the commander to the playmat, remove it from the commander zone and add to large zone
+      setCommander(null); // Remove commander from the commander zone
+      setLargeZone((prevLargeZone) => [...prevLargeZone, cardData]); // Add commander to the playmat
+  
+      updatedGameState = {
+          ...updatedGameState,
+          commanderZone: null, // Clear the commander zone
+          largeZone: [...largeZone, cardData], // Add the commander to large zone
+      };
+  }
+  
+  // Update the gameState in the context
+  updateGameState(updatedGameState);
+  
 
     // Send the updated state to the mirror window
     if (mirrorWindow && !mirrorWindow.closed) {
@@ -574,8 +595,8 @@ const Play = () => {
       const cardId = selectedCard.id || `${selectedCard.name}-${Date.now()}`; // Ensure we have a unique card ID
   
       const isTapped = tappedCards[cardId];
-      const offsetY = 38.5; // Offset for Y position when rotating
-      const offsetX = 228.5; // Offset for X position when rotating
+      const offsetY = -20.5; // Offset for Y position when rotating
+      const offsetX = 0; // Offset for X position when rotating
   
       // If the card is tapped or untapped, update its position
       const newXPosition = isTapped
@@ -893,7 +914,7 @@ const Play = () => {
                 <img
                   src={getCardImageSrc(card)}
                   alt={card.name}
-                  className="playable-card"
+                  className="playmat-card"
                   draggable="true"
                   onClick={() => handleTapUntapCard(card)} // Add click event to tap/untap the card
                   onDragStart={(event) => handleDragStart(card, event)} // Drag card
@@ -985,14 +1006,18 @@ const Play = () => {
           <div
             className="commander-block"
             onClick={handleCommanderClick} // Open commander viewer on click
-            onDrop={(event) => handleDrop('commander', event)}
-            onDragOver={handleDragOver}
+            onDrop={(event) => handleDrop('commander', event)} // Drop handler for the commander zone
+            onDragOver={handleDragOver} // Allow dragging over the commander zone
           >
             {commander ? (
               <img
                 src={getCardImageSrc(commander)}
                 alt={commander.name}
                 className="playable-card"
+                draggable="true" // Enable dragging
+                onDragStart={(event) => handleDragStart(commander, event)} // Start dragging the commander
+                onMouseEnter={() => handleCardHover(commander)} // Show card in top-left on hover
+                onMouseLeave={handleCardMouseLeave} // Clear preview on mouse leave
               />
             ) : (
               <div className="commander-block-empty">
@@ -1000,6 +1025,7 @@ const Play = () => {
               </div>
             )}
           </div>
+
           <div className="commander-utility-buttons">
             <button onClick={handleUntapAll} className="untap-all-button">
               ⟳

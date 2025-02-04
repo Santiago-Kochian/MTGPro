@@ -82,48 +82,51 @@
 
 /* Large block (top of center container) */
 .large-block {
-    width: 100%; /* Same width as the hand block */
-    height: calc(100% - 29.3vh); /* Height to reach the top of the exiled block */
-    background-color: #555;
-    border: 2px solid #777;
-    position: relative; /* To allow absolute positioning of cards */
-    overflow: hidden; /* Prevent cards from going out of the block */
+  width: 100%; /* Same width as the hand block */
+  height: calc(100% - 29.3vh); /* Height to reach the top of the exiled block */
+  background-color: #555;
+  border: 2px solid #777;
+  position: relative; /* To allow absolute positioning of cards */
+  overflow-x: auto; /* Horizontal scroll */
+  overflow-y: auto; /* Vertical scroll */
+  gap: 10px;
+  padding: 15px;
 }
 
 /* Hand block (center) */
 .hand-block {
-    width: 1330px; /* Fixed width for the hand block */
-    background-color: #333;
-    border: 2px solid #555;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 267px; /* Match the height of the cards */
-    color: white;
-    overflow: hidden; /* Prevent cards from extending beyond the block */
+  width: 1330px; /* Fixed width for the hand block */
+  background-color: #333;
+  border: 2px solid #555;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 267px; /* Match the height of the cards */
+  color: white;
+  overflow: hidden; /* Prevent cards from extending vertically */
 }
 
-/* Hand container for displaying drawn cards */
 .hand-cards {
-    display: flex;
-    align-items: center;
-    height: 100%;
-    position: relative;
-    overflow: hidden; /* Prevent hand block from expanding */
+  display: flex;
+  align-items: center;
+  height: 100%;
+  position: relative;
+  overflow-x: auto; /* Allow horizontal scrolling */
+  overflow-y: hidden; /* Hide vertical overflow */
+  white-space: nowrap; /* Prevent cards from wrapping to new lines */
 }
 
-/* Image of cards in hand */
 .hand-card-image {
-    width: 190px;
-    height: 267px;
-    object-fit: cover;
-    position: relative;
-    margin-left: 10px; /* Default margin */
+  width: 190px;
+  height: 267px;
+  object-fit: cover;
+  position: relative;
+  margin-left: 10px; /* Default margin */
 }
 
 /* Apply overlap to all cards if hand has more than 6 */
 .hand-block.overlap .hand-card-image {
-    margin-right: -50px; /* Negative margin to create overlap */
+  margin-right: -50px; /* Negative margin to create overlap */
 }
 
 /* Right container for stacking Exiled, Graveyard, and Commander blocks */
@@ -482,7 +485,7 @@
   
   .top-right {
     top: -15px;   /* Adjust to ensure it's positioned correctly */
-    right: -205px; /* Ensures it's aligned to the top-right corner of the card */
+    right: -15px; /* Ensures it's aligned to the top-right corner of the card */
   }
   
   .white-background {
@@ -584,3 +587,10 @@
   .add-token-button:hover {
     background-color: #777;
   }
+
+  /* Add these new rules */
+.playmat-card {
+  width: 133px !important;  /* 30% smaller than 190px */
+  height: 187px !important; /* 30% smaller than 267px */
+  object-fit: cover;
+}

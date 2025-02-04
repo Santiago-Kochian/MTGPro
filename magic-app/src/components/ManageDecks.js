@@ -24,26 +24,32 @@ function ManageDecks() {
   // Function to load the Excel file and parse the data
   useEffect(() => {
     const fetchData = async () => {
-      const cardResponse = await fetch('/MTGDB.xlsx');
-      const banlistResponse = await fetch('/MTGbanlist.xlsx');
-      
-      // Load all cards
-      const cardArrayBuffer = await cardResponse.arrayBuffer();
-      const cardWorkbook = XLSX.read(cardArrayBuffer, { type: 'array' });
-      const cardSheet = cardWorkbook.Sheets['Sheet1'];
-      const cardData = XLSX.utils.sheet_to_json(cardSheet);
-      setAllCards(cardData); // Store all cards for searching
+      try {
+        const cardResponse = await fetch(`${process.env.PUBLIC_URL}/MTGDB.xlsx`);
+        const banlistResponse = await fetch(`${process.env.PUBLIC_URL}/MTGbanlist.xlsx`);
+        
+        // Load all cards
+        const cardArrayBuffer = await cardResponse.arrayBuffer();
+        const cardWorkbook = XLSX.read(cardArrayBuffer, { type: 'array' });
+        const cardSheet = cardWorkbook.Sheets['Sheet1'];
+        const cardData = XLSX.utils.sheet_to_json(cardSheet);
+        setAllCards(cardData); // Store all cards for searching
 
-      // Load the ban list
-      const banlistArrayBuffer = await banlistResponse.arrayBuffer();
-      const banlistWorkbook = XLSX.read(banlistArrayBuffer, { type: 'array' });
-      const banlistSheet = banlistWorkbook.Sheets['Sheet1'];
-      const banlistData = XLSX.utils.sheet_to_json(banlistSheet);
-      setBanList(banlistData.map(card => card['name'].toLowerCase())); // Store banned card names in lowercase
+        // Load the ban list
+        const banlistArrayBuffer = await banlistResponse.arrayBuffer();
+        const banlistWorkbook = XLSX.read(banlistArrayBuffer, { type: 'array' });
+        const banlistSheet = banlistWorkbook.Sheets['Sheet1'];
+        const banlistData = XLSX.utils.sheet_to_json(banlistSheet);
+        setBanList(banlistData.map(card => card['name'].toLowerCase())); // Store banned card names in lowercase
+      } catch (error) {
+        console.error("Error fetching files:", error);
+      }
     };
 
     fetchData();
-  }, []);
+}, []);
+
+  
 
 
   const checkIfBanned = (cardName) => {

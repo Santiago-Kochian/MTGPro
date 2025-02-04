@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import React from 'react';
+import { Route, Routes, Link } from 'react-router-dom'; // Import Link here
 import Play from './components/Play';
 import ManageDecks from './components/ManageDecks';
 import { DeckProvider } from './components/DeckContext';
@@ -9,16 +9,14 @@ import PlaymatMirror from './components/PlaymatMirror';
 function App() {
   return (
     <DeckProvider>
-      <Router>
-        <div className="App">
-          <Routes>
-            <Route path="/" element={<MainMenu />} />
-            <Route path="/play" element={<Play />} />
-            <Route path="/manage-decks" element={<ManageDecks />} />
-            <Route path="/mirror" element={<PlaymatMirror />} /> {/* Mirror route */}
-          </Routes>
-        </div>
-      </Router>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<MainMenu />} />
+          <Route path="/play" element={<Play />} />
+          <Route path="/manage-decks" element={<ManageDecks />} />
+          <Route path="/mirror" element={<PlaymatMirror />} /> {/* Mirror route */}
+        </Routes>
+      </div>
     </DeckProvider>
   );
 }
